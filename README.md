@@ -3,7 +3,7 @@ A program to annotate YNAB transactions with Amazon order info
 
 ## Setup/Prerequisites
 1. **YNAB and Amazon Accounts**: Ensure you have active accounts for both YNAB and Amazon.
-2. **Create a Renaming Rule in YNAB**: 
+2. **Create a Renaming Rule in YNAB**:
    - In YNAB, go to the "Manage Payees" menu.
    - Create a rule to automatically rename any transactions containing "Amazon" to the payee name you want to use to indicate that the transaction needs to be processed. The default is `"Amazon - Needs Memo"`.
 3. **Create a Processed Payee in YNAB**:
@@ -33,15 +33,15 @@ A program to annotate YNAB transactions with Amazon order info
      ```
 
 ## Running the script
-Just run 
+Just run
 ```bash
 python main.py
 ```
 
-You can run 
-```bash 
+You can run
+```bash
 python ynab-transaction.py
-``` 
+```
 and
 ``` bash
 python amazon-transactions.py
