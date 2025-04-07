@@ -9,8 +9,6 @@ from amazonorders.transactions import AmazonTransactions
 
 from cache_decorator import Cache
 import os
-from os import path
-from os.path import join
 import tempfile
 
 from cli_parser import CLIParser
