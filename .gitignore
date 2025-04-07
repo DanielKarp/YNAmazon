@@ -2,6 +2,8 @@ config.py
 output
 .DS_Store
 
+# cache of amazon or ynab
+cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

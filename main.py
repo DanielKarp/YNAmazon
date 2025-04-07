@@ -4,12 +4,21 @@ from amazon_transactions import TransactionWithOrderInfo
 
 from settings import settings
 
+from cli_parser import CLIParser
+
 def process_transactions() -> None:
     """Match YNAB transactions to Amazon Transactions and optionally update YNAB Memos."""
     ynab_trans, amazon_with_memo_payee = ynab_transactions.get_ynab_transactions()
-    print("please wait... (amazon transactions are being fetched, which takes a while)")
+
+    use_amazon_cache = not CLIParser().force_refresh_amazon
+
+    if use_amazon_cache:
+      print("Amazon transactions may need to be refreshed. If so, please wait as it can take a while...")
+    else:
+      print("Forcing refresh of Amazon transactions. Please wait as it can take a while...")
+
     amazon_trans: list[TransactionWithOrderInfo] = (
-        amazon_transactions.get_amazon_transactions()
+        amazon_transactions.get_amazon_transactions(use_cache = use_amazon_cache)
     )
     if not ynab_trans:
         print("No matching Transactions found in YNAB. Exiting.")

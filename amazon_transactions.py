@@ -1,11 +1,15 @@
 from collections import namedtuple
-from datetime import date
+from datetime import date, datetime
 
 from amazonorders.entity.order import Order
 from amazonorders.entity.transaction import Transaction
 from amazonorders.orders import AmazonOrders
 from amazonorders.session import AmazonSession
 from amazonorders.transactions import AmazonTransactions
+
+from cache_decorator import Cache
+
+from cli_parser import CLIParser
 
 # import config
 from settings import settings
@@ -22,13 +26,29 @@ TransactionWithOrderInfo = namedtuple(
     ],
 )
 
-
-def get_amazon_transactions() -> list[TransactionWithOrderInfo]:
+def get_amazon_transactions(use_cache: bool = True) -> list[TransactionWithOrderInfo]:
     """Returns a list of transactions with order info.
+
+    Args:
+        use_cache (bool): Set to false to skip using the latest cached Amazon transaction files
 
     Returns:
         list[TransactionWithOrderInfo]: A list of transactions with order info
     """
+    return [
+        TransactionWithOrderInfo(
+            datetime.fromisoformat(json_trans[0]), # completed_date
+            *json_trans[1:] # remaining args
+        )
+        for json_trans in _json_compatible_amazon_transactions(use_cache=use_cache)
+    ]
+
+@Cache(
+  validity_duration="10m",
+  enable_cache_arg_name="use_cache",
+  cache_path="cache/amazon_transactions_json_compatible_amazon_transactions/{_hash}.json"
+)
+def _json_compatible_amazon_transactions() -> list[TransactionWithOrderInfo]:
     amazon_session = AmazonSession(
         username=settings.amazon_user,
         password=settings.amazon_password.get_secret_value(),
@@ -53,7 +73,7 @@ def get_amazon_transactions() -> list[TransactionWithOrderInfo]:
             continue
         amazon_transaction_with_order_details.append(
             TransactionWithOrderInfo(
-                completed_date=transaction.completed_date,
+                completed_date=transaction.completed_date.isoformat(),
                 transaction_total=int(transaction.grand_total * -1000),
                 order_total=int(order.grand_total * 1000),
                 order_number=transaction.order_number,
@@ -63,7 +83,6 @@ def get_amazon_transactions() -> list[TransactionWithOrderInfo]:
         )
 
     return amazon_transaction_with_order_details
-
 
 def print_amazon_transactions(
     amazon_transaction_with_order_details: list[TransactionWithOrderInfo],
@@ -88,4 +107,5 @@ def print_amazon_transactions(
 
 
 if __name__ == "__main__":
-    print_amazon_transactions(get_amazon_transactions())
+    use_cache = not CLIParser().force_refresh_amazon
+    print_amazon_transactions(get_amazon_transactions(use_cache=use_cache))
