@@ -8,6 +8,10 @@ from amazonorders.session import AmazonSession
 from amazonorders.transactions import AmazonTransactions
 
 from cache_decorator import Cache
+import os
+from os import path
+from os.path import join
+import tempfile
 
 from cli_parser import CLIParser
 
@@ -46,7 +50,7 @@ def get_amazon_transactions(use_cache: bool = True) -> list[TransactionWithOrder
 @Cache(
   validity_duration="10m",
   enable_cache_arg_name="use_cache",
-  cache_path="cache/amazon_transactions_json_compatible_amazon_transactions/{_hash}.json"
+  cache_path=os.path.join(tempfile.gettempdir(), "ynamazon", "amazon_transactions_json_compatible_amazon_transactions_{_hash}.json")
 )
 def _json_compatible_amazon_transactions() -> list[TransactionWithOrderInfo]:
     amazon_session = AmazonSession(
