@@ -1,6 +1,14 @@
 import argparse
 
 class CLIParser:
+    _instance = None
+
+    def __new__(cls, *_args, **_kwargs):
+        if cls._instance == None:
+            cls._instance = super().__new__(cls, *_args, **_kwargs)
+
+        return cls._instance
+
     def __init__(self):
         self.args = self._parse_args()
 
