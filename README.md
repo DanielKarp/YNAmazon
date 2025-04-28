@@ -34,7 +34,7 @@ A program to annotate YNAB transactions with Amazon order info
      ```bash
      # Basic installation (without AI features)
      uv sync
-     
+
      # Installation with AI features
      uv sync --extra ai
      ```

@@ -3,7 +3,7 @@ target-version = "py39"
 [lint]
 extend-select = ["B", "C90", "D", "RUF", "UP"]
 extend-ignore = ["D10", "E501"]
-exclude = ["__about__.py"]
+exclude = ["__about__.py", "typings/**"]
 
 [lint.flake8-type-checking]
 runtime-evaluated-base-classes = ["pydantic.BaseModel"]

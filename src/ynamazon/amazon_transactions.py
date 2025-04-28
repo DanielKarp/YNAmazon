@@ -1,18 +1,28 @@
+from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
 from typing import Annotated, Union  # ,  Self  # not available python <3.11
 
+from amazonorders.conf import AmazonOrdersConfig
 from amazonorders.entity.order import Order
 from amazonorders.entity.transaction import Transaction
 from amazonorders.orders import AmazonOrders
 from amazonorders.session import AmazonSession
 from amazonorders.transactions import AmazonTransactions
 from loguru import logger
-from pydantic import AnyUrl, BaseModel, EmailStr, Field, SecretStr, field_validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+    field_validator,
+)
 from rich import print as rprint
 from rich.table import Table
 
-from .settings import settings
+from .settings import get_settings
 from .types_pydantic import AmazonItemType
 
 
@@ -25,7 +35,7 @@ class AmazonTransactionWithOrderInfo(BaseModel):
     ]
     order_total: Decimal
     order_number: str
-    order_link: AnyUrl
+    order_link: Union[AnyUrl, None]
     items: list[AmazonItemType]
 
     @field_validator("transaction_total", mode="after")
@@ -45,10 +55,10 @@ class AmazonTransactionWithOrderInfo(BaseModel):
             raise ValueError(f"Order with number {transaction.order_number} not found.")
         return cls(
             completed_date=transaction.completed_date,
-            transaction_total=transaction.grand_total,
-            order_total=order.grand_total,
+            transaction_total=transaction.grand_total,  # pyright: ignore[reportArgumentType]
+            order_total=order.grand_total,  # pyright: ignore[reportArgumentType]
             order_number=order.order_number,
-            order_link=order.order_details_link,
+            order_link=order.order_details_link,  # pyright: ignore[reportArgumentType]
             items=order.items,
         )
 
@@ -61,14 +71,20 @@ class AmazonConfig(BaseModel):
         password (SecretStr): Amazon account password.
     """
 
-    username: EmailStr = Field(default_factory=lambda: settings.amazon_user)
-    password: SecretStr = Field(default_factory=lambda: settings.amazon_password)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def amazon_session(self) -> AmazonSession:
+    username: EmailStr = Field(default_factory=lambda: get_settings().amazon_user)
+    password: SecretStr = Field(default_factory=lambda: get_settings().amazon_password)
+    config: AmazonOrdersConfig = Field(default_factory=lambda: AmazonOrdersConfig())
+    debug: bool = False
+
+    def amazon_session(self, *, debug: Union[bool, None] = None) -> AmazonSession:
         """Creates an Amazon session."""
+        logger.debug(f"Creating Amazon session for {self.username}")
         return AmazonSession(
             username=self.username,
             password=self.password.get_secret_value(),
+            debug=debug if debug is not None else self.debug,
         )
 
 
@@ -117,40 +133,55 @@ def get_amazon_transactions(
 
 
 def _fetch_amazon_order_history(
-    *, session: AmazonSession, years: Union[list[int], None] = None
+    *,
+    session: AmazonSession,
+    years: Union[Sequence[Union[int, str]], Union[int, str], None] = None,
+    debug: bool = False,
+    config: Union[AmazonOrdersConfig, None] = None,
 ) -> list[Order]:
     """Returns a list of Amazon orders.
 
     Args:
         session (AmazonSession): Amazon session (must be logged in).
-        years (Sequence[int] | None): A sequence of years to fetch orders for. `None` for the current year.
+        years (Sequence[int | str] | int | str | None): A sequence of years to fetch orders for. `None` for the current year.
+        debug: (bool): Debug mode.
+        config (AmazonOrdersConfig | None): Amazon orders configuration.
 
     Returns:
-        list[Order]: A list of Amazon orders.
+        list[Order]: A list of Amazon orders sorted by `order_placed_date`.
     """
     if not session.is_authenticated:
         raise ValueError("Session must be authenticated.")
-    amazon_orders = AmazonOrders(session)
+    amazon_orders = AmazonOrders(session, debug=debug, config=config)
     if years is None:
         years = [date.today().year]
+    if not isinstance(years, Sequence):
+        years = [years]
     all_orders: list[Order] = []
     for year in years:
-        if len(year_str := str(year)) == 2:
-            year_str = "20" + year_str
-        all_orders.extend(amazon_orders.get_order_history(year=year_str))
+        year = int(year)
+        if year < 100:
+            # If the year is less than 100, assume it's a 2-digit year
+            # and convert it to a 4-digit year (e.g. 23 -> 2023)
+            year += 2000
+        all_orders.extend(amazon_orders.get_order_history(year=year))
     all_orders.sort(key=lambda order: order.order_placed_date)
 
     return all_orders
 
 
 def _fetch_sorted_amazon_transactions(
-    *, amazon_session: AmazonSession, transaction_days: int = 31
+    *,
+    amazon_session: AmazonSession,
+    transaction_days: int = 31,
+    debug: bool = False,
+    config: Union[AmazonOrdersConfig, None] = None,
 ) -> list[Transaction]:
     """Fetches and sorts Amazon transactions."""
     if not amazon_session.is_authenticated:
         raise ValueError("Session must be authenticated.")
     amazon_transactions = AmazonTransactions(
-        amazon_session=amazon_session
+        amazon_session=amazon_session, debug=debug, config=config
     ).get_transactions(days=transaction_days)
     amazon_transactions.sort(key=lambda trans: trans.completed_date)
     return amazon_transactions

@@ -1,5 +1,9 @@
 # `yna`
 
+<span style="color: #008080; text-decoration-color: #008080; font-weight: bold">Run &#x27;yna&#x27; to match and update transactions using the arguements in .env. </span>
+
+<span style="color: #808000; text-decoration-color: #808000; font-style: italic">Use &#x27;yna ynamazon [ARGS]&#x27; to use command-line arguements to override .env. </span>
+
 **Usage**:
 
 ```console
@@ -17,6 +21,7 @@ $ yna [OPTIONS] COMMAND [ARGS]...
 * `print-ynab`: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">Prints YNAB transactions.</span>
 * `print-amazon`: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">Prints Amazon transactions.</span>
 * `ynamazon`: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">Match YNAB transactions to...</span>
+* `new-ynamazon`
 * `utils`: <span style="color: #008080; text-decoration-color: #008080; font-weight: bold">Utility commands</span>
 
 ## `yna print-ynab`
@@ -84,6 +89,28 @@ $ yna ynamazon [OPTIONS] [YNAB_API_KEY] [YNAB_BUDGET_ID] [AMAZON_USER] [AMAZON_P
 
 **Options**:
 
+* `--help`: Show this message and exit.
+
+## `yna new-ynamazon`
+
+**Usage**:
+
+```console
+$ yna new-ynamazon [OPTIONS] [YNAB_API_KEY] [YNAB_BUDGET_ID] [AMAZON_USER] [AMAZON_PASSWORD]
+```
+
+**Arguments**:
+
+* `[YNAB_API_KEY]`: YNAB API key
+* `[YNAB_BUDGET_ID]`: YNAB Budget ID
+* `[AMAZON_USER]`: Amazon username
+* `[AMAZON_PASSWORD]`: Amazon password
+
+**Options**:
+
+* `-c, --config FILE`
+* `--force-logout / --no-force-logout`: [default: no-force-logout]
+* `-d, --debug`: Enable debug mode
 * `--help`: Show this message and exit.
 
 ## `yna utils`

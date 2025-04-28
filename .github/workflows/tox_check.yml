@@ -1,0 +1,28 @@
+name: Tox Check
+
+on: [push, pull_request]
+
+jobs:
+  tox:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libjpeg-dev (used for Pillow library)
+        run: sudo apt-get install libjpeg-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: 0.6.12
+
+      - name: Install Python using uv
+        run: uv python install
+
+      - name: Install Packages using uv
+        run: uv sync --all-groups --all-extras
+
+      - name: Run Tox
+        run: uv run tox
